@@ -1,12 +1,12 @@
 function day3(lines=sample)
+  isspecial(char) = !isnumeric(char) && char != '.'
   mat = reduce(hcat, collect.(lines))
   acc = 0
-  for i in eachindex(lines)
-    for (num, pos, len) in findnums(lines[i])
-      valid = any(box(pos, len, i, mat)) do char
-        !isnumeric(char) && char != '.'
+  for (i, line) in enumerate(lines)
+    for (num, pos, len) in findnums(line)
+      if any(isspecial, box(pos, len, i, mat))
+        acc += num
       end
-      valid && (acc += num)
     end
   end
   return acc
@@ -29,11 +29,12 @@ function box(x, lx, y, m)
 end
 
 function day3b(lines=sample)
+  isstar(char) = char == '*'
   mat = reduce(hcat, collect.(lines))
   stardict = Dict()
-  for i in eachindex(lines)
-    for (num, pos, len) in findnums(lines[i])
-      for xy in findall(char -> char == '*', paddedbox(pos, len, i, mat))
+  for (i, line) in enumerate(lines)
+    for (num, pos, len) in findnums(line)
+      for xy in findall(isstar, paddedbox(pos, len, i, mat))
         xy = Tuple(xy) .+ (pos, i)
         stardict[xy] = push!(get(stardict, xy, []), num)
       end
@@ -50,7 +51,8 @@ function paddedbox(x, lx, y, m)
   box(x + 1, lx, y + 1, mp)
 end
 
-sample = split(raw"467..114..
+splitlines(x) = split(x, "\n")
+sample = splitlines(raw"467..114..
 ...*......
 ..35..633.
 ......#...
@@ -59,4 +61,4 @@ sample = split(raw"467..114..
 ..592.....
 ......755.
 ...$.*....
-.664.598..", "\n")
+.664.598..")
