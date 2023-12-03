@@ -1,11 +1,8 @@
-function day3(lines)
+function day3(lines=sample)
   mat = reduce(hcat, collect.(lines))
   acc = 0
   for i in eachindex(lines)
-    for m in eachmatch(r"(\d+)", lines[i])
-      num = parse.(Int, m.match)
-      len = length(m.match)
-      pos = m.offset
+    for (num, pos, len) in findnums(lines[i])
       valid = any(box(pos, len, i, mat)) do char
         !isnumeric(char) && char != '.'
       end
@@ -15,6 +12,15 @@ function day3(lines)
   return acc
 end
 
+function findnums(line)
+  map(eachmatch(r"(\d+)", line)) do m
+    num = parse.(Int, m.match)
+    len = length(m.match)
+    pos = m.offset
+    (num, pos, len)
+  end
+end
+
 function box(x, lx, y, m)
   nx, ny = size(m)
   xs = max(x - 1, 1):min(x + lx - 1 + 1, nx)
@@ -22,20 +28,14 @@ function box(x, lx, y, m)
   m[xs, ys]
 end
 
-function day3b(lines)
+function day3b(lines=sample)
   mat = reduce(hcat, collect.(lines))
   stardict = Dict()
   for i in eachindex(lines)
-    for m in eachmatch(r"(\d+)", lines[i])
-      num = parse.(Int, m.match)
-      len = length(m.match)
-      pos = m.offset
-      coords = findall(paddedbox(pos, len, i, mat)) do char
-        char == '*'
-      end
-      for c in coords
-        c = Tuple(c) .+ (pos, i)
-        stardict[c] = push!(get(stardict, c, []), num)
+    for (num, pos, len) in findnums(lines[i])
+      for xy in findall(char -> char == '*', paddedbox(pos, len, i, mat))
+        xy = Tuple(xy) .+ (pos, i)
+        stardict[xy] = push!(get(stardict, xy, []), num)
       end
     end
   end
