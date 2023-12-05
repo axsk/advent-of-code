@@ -5,11 +5,11 @@ using Folds  # multithreaded reduction
 
 function parseinput(data=data)
   cats = split(data, ":")[2:end]
-  seeds = map(x -> Base.parse(Int, x.match), eachmatch(r"(\d+)", cats[1]))
+  seeds = map(x -> parse(Int, x.match), eachmatch(r"(\d+)", cats[1]))
 
   repls = map(cats[2:end]) do cat
     map(eachmatch(r"(\d+) (\d+) (\d+)", cat)) do m
-      Tuple(Base.parse.(Int, split(m.match)))::Tuple{Int,Int,Int} # type stability matters here
+      Tuple(parse.(Int, split(m.match)))::Tuple{Int,Int,Int} # type stability matters here
     end
   end
 
@@ -27,7 +27,7 @@ function findloc(seed, repls)
     end
     input = output
   end
-  location = input
+  return location = input
 end
 
 function part1(data=data)
@@ -37,7 +37,6 @@ end
 
 function part2(data=data)
   seeds, repls = parseinput(data)
-  m = Inf
   minimum(1:2:length(seeds)) do i
     @time Folds.minimum(seeds[i]:seeds[i]+seeds[i+1]) do seed
       findloc(seed, repls)
