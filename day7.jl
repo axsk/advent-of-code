@@ -16,12 +16,8 @@ end
 
 function value2(hand)
   m = multiplicities(filter(!=('J'), hand))
-  if isempty(m)
-    m = [5]
-  else
-    m[1] += 5 - sum(m)
-  end
-
+  isempty(m) && (m = [0])
+  m[1] += 5 - sum(m)
   (m, [card == 'J' ? -1000 : cardval(card) for card in hand])
 end
 
