@@ -1,74 +1,35 @@
-function parseinput(lines)
-  hands = []
-  bids = Int[]
-  for l in lines
-    hand, bid = split(l, " ")
-    push!(hands, hand)
-    push!(bids, parse(Int, bid))
+using Chain
+
+multiplicities(hand) = sort(count.(unique(hand), hand), rev=true)
+cardval(card::Char) = -findfirst(card, "A, K, Q, J, T, 9, 8, 7, 6, 5, 4, 3, 2")
+value1(hand) = (multiplicities(hand), cardval.(collect(hand)))
+
+function part1(data=sample, valfun=value1)
+  @chain data begin
+    split.(_)
+    sort(_, by=x -> valfun(x[1]))
+    map(x -> parse(Int, x[2]), _)
+    _ .* (1:length(_))
+    sum
   end
-  hands, bids
 end
 
-function beats(hand1, hand2)
-  hand1, hand2
-  c1 = multiplicities(hand1)
-  c2 = multiplicities(hand2)
-
-  c1 > c2 && return true
-  c1 < c2 && return false
-
-  return hashighcard(hand1, hand2)
-end
-
-function beats2(hand1, hand2)
-  c1 = multiplicities(filter(x -> x != 'J', hand1))
-  c2 = multiplicities(filter(x -> x != 'J', hand2))
-
-  if length(c1) == 0
-    c1 = [5]
+function value2(hand)
+  m = multiplicities(filter(!=('J'), hand))
+  if isempty(m)
+    m = [5]
   else
-    c1[1] += count(x -> x == 'J', hand1)
+    m[1] += 5 - sum(m)
   end
 
-  if length(c2) == 0
-    c2 = [5]
-  else
-    c2[1] += count(x -> x == 'J', hand2)
-  end
-
-  c1 > c2 && return true
-  c1 < c2 && return false
-
-  return hashighcard(hand1, hand2, "A, K, Q, T, 9, 8, 7, 6, 5, 4, 3, 2, J")
+  (m, [card == 'J' ? -1000 : cardval(card) for card in hand])
 end
 
-function hashighcard(hand1, hand2, valuation="A, K, Q, J, T, 9, 8, 7, 6, 5, 4, 3, 2")
-  cardval(card::Char) = findfirst(card, valuation)
-  cardval.(collect(hand1)) < cardval.(collect(hand2)) && return true
-  cardval.(collect(hand1)) > cardval.(collect(hand2)) && return false
-  error()
-end
+part2(data=sample) = part1(data, value2)
 
-function multiplicities(hand1)
-  chars = Set(collect(hand1))
-  sort(count.(chars, hand1), rev=true)
-end
-
-function part1(data=sample)
-  hands, bids = parseinput(data)
-  p = sortperm(hands, lt=(x, y) -> beats(x, y), rev=true)
-  sum((1:length(bids)) .* bids[p])
-end
-
-function part2(data=sample)
-  hands, bids = parseinput(data)
-  p = sortperm(hands, lt=(x, y) -> beats2(x, y), rev=true)
-  sum((1:length(bids)) .* bids[p])
-end
+### Tests n data
 
 function test()
-  @assert !beats2("JKKK2", "QQQQ2")
-  @assert beats2("QQQQ2", "JKKK2")
   @assert part1(sample) == 6440
   @assert part2(sample) == 5905
   @assert part1(data) == 246424613
