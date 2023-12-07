@@ -7,7 +7,7 @@ value1(hand) = (multiplicities(hand), cardval.(collect(hand)))
 function part1(data=sample, valfun=value1)
   @chain data begin
     split.(_)
-    sort(_, by=x -> valfun(x[1]))
+    sort(by=x -> valfun(x[1]))
     map(x -> parse(Int, x[2]), _)
     _ .* (1:length(_))
     sum

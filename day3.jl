@@ -13,12 +13,15 @@ function day3(lines=sample)
 end
 
 function findnums(line)
-  map(eachmatch(r"(\d+)", line)) do m
+  c = eachmatch(r"(\d+)", line)
+  function f(m)
+    #map(c) do m
     num = parse.(Int, m.match)
     len = length(m.match)
     pos = m.offset
     (num, pos, len)
   end
+  f.(c)
 end
 
 function box(x, lx, y, m)
