@@ -3,7 +3,6 @@
 input = readlines("2023/data/day_10.txt")
 parse_input(lines) = permutedims(reduce(hcat, collect.(lines)))
 
-
 directions = Dict(
     '|' => ((-1, 0), (1, 0)),
     '-' => ((0, -1), (0, 1)),
@@ -26,55 +25,17 @@ function solve(input)
         for d in dirs
             next = pos + CartesianIndex(d)
             if grid[next] in keys(directions) && history[end-1] != next
-                # shoelace formula
                 dy = next[1] + pos[1]
                 dx = next[2] - pos[2]
-                area += 1 / 2 * (dx) * (dy)
-
+                area += 1 / 2 * (dx) * (dy) # shoelace formula
                 pos = next
-                push!(history, pos)
                 break
             end
         end
         pos == start && break
+        push!(history, pos)
     end
-    history = history[2:end-1]  # remove extra starts
+    history = history[2:end]  # remove extra start at beginning
     area = convert(Int, abs(area) - length(history) / 2 + 1)  # account for partial filled squares
     return div(length(history), 2), area
 end
-
-
-# alternative approach for area, using raycasting
-
-function area(grid, history)
-    nx, ny = size(grid)
-    mask = zeros(Bool, nx, ny)
-    area = zeros(Bool, nx, ny)
-    mask[history] .= true
-    grid[findfirst(grid .== 'S')] = 'L' # cheated
-    for i in 1:ny
-        inside = false
-        for j in 1:nx
-            c = grid[i, j]
-            if mask[i, j] && c in "|LJ"
-                inside = !inside
-            elseif !mask[i, j]
-                inside && (area[i, j] = true)
-            end
-        end
-    end
-    return sum(area)
-end
-
-
-
-#=
-    | is a vertical pipe connecting north and south.
-    - is a horizontal pipe connecting east and west.
-    L is a 90-degree bend connecting north and east.
-    J is a 90-degree bend connecting north and west.
-    7 is a 90-degree bend connecting south and west.
-    F is a 90-degree bend connecting south and east.
-    . is ground; there is no pipe in this tile.
-    S is the starting position of the animal; there is a pipe on this tile, but your sketch doesn't show what shape the pipe has.
-=#
