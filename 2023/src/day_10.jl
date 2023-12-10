@@ -3,17 +3,34 @@
 input = readlines("2023/data/day_10.txt")
 parse_input(lines) = permutedims(reduce(hcat, collect.(lines)))
 
-function part_1(input)
+
+directions = Dict(
+    '|' => ((-1, 0), (1, 0)),
+    '-' => ((0, -1), (0, 1)),
+    'L' => ((-1, 0), (0, 1)),
+    'J' => ((-1, 0), (0, -1)),
+    '7' => ((1, 0), (0, -1)),
+    'F' => ((1, 0), (0, 1)),
+    'S' => ((-1, 0), (1, 0), (0, -1), (0, 1))
+)
+
+function solve(input)
     grid = parse_input(input)
     start = findfirst(grid .== 'S')
     pos = start
     history = [start, start]
+    area = 0
     while true
         pipe = grid[pos]
         dirs = directions[pipe]
         for d in dirs
             next = pos + CartesianIndex(d)
             if grid[next] in keys(directions) && history[end-1] != next
+                # shoelace formula
+                dy = next[1] + pos[1]
+                dx = next[2] - pos[2]
+                area += 1 / 2 * (dx) * (dy)
+
                 pos = next
                 push!(history, pos)
                 break
@@ -21,9 +38,13 @@ function part_1(input)
         end
         pos == start && break
     end
-    return div(length(history), 2) - 1, area(grid, history)
+    history = history[2:end-1]  # remove extra starts
+    area = convert(Int, abs(area) - length(history) / 2 + 1)  # account for partial filled squares
+    return div(length(history), 2), area
 end
-@info part_1(input)
+
+
+# alternative approach for area, using raycasting
 
 function area(grid, history)
     nx, ny = size(grid)
@@ -44,18 +65,8 @@ function area(grid, history)
     end
     return sum(area)
 end
-@info part_2(input)
 
 
-directions = Dict(
-    '|' => ((-1, 0), (1, 0)),
-    '-' => ((0, -1), (0, 1)),
-    'L' => ((-1, 0), (0, 1)),
-    'J' => ((-1, 0), (0, -1)),
-    '7' => ((1, 0), (0, -1)),
-    'F' => ((1, 0), (0, 1)),
-    'S' => ((-1, 0), (1, 0), (0, -1), (0, 1))
-)
 
 #=
     | is a vertical pipe connecting north and south.
