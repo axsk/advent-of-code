@@ -2,12 +2,17 @@ using IterTools
 using Lazy: @>>
 using Chain
 
+data = readlines("data/day10.txt")
 parseinput(lines) = permutedims(reduce(hcat, collect.(lines)))
 
+N = [-1, 0]
+W = [0, -1]
+S = [1, 0]
+E = [0, 1]
 
+dirs = Dict('|' => (N, S), '-' => (W, E), 'L' => (N, E), 'J' => (N, W), '7' => (S, W), 'F' => (S, E), 'S' => (N, S, W, E))
 
-
-function part1(lines)
+function solve(lines)
   g = parseinput(lines)
   grid = fill('.', (size(g) .+ [2, 2])...)
   grid[2:end-1, 2:end-1] .= g
@@ -40,10 +45,6 @@ function takemove(grid, pos, last)
       return n
     end
   end
-end
-
-function part2(lines)
-  x = parseinput(lines)
 end
 
 sample1 = split(".....
@@ -84,21 +85,12 @@ L---JF-JLJ.||-FJLJJ7
 L.L7LFJ|||||FJL7||LJ
 L7JLJL-JLJLJL--JLJ.L", "\n")
 
-data = readlines("data/day10.txt")
-
 function test()
   @show part1(sample1)[2] == 1
   @show part1(sample2)[2] == 4
   @show part1(sample3)[2] == 8
   @show part1(sample4)[2] == 10
 end
-
-N = [-1, 0]
-W = [0, -1]
-S = [1, 0]
-E = [0, 1]
-
-dirs = Dict('|' => (N, S), '-' => (W, E), 'L' => (N, E), 'J' => (N, W), '7' => (S, W), 'F' => (S, E), 'S' => (N, S, W, E))
 
 #=
     | is a vertical pipe connecting north and south.
