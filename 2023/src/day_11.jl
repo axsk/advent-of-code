@@ -61,8 +61,7 @@ function part_1s(lines)
 end
 
 # first approach, which I sacked because findall was superslow for adjoint sparse arrays
-using SparseArrays
-function part_2s(input, n=1_000_000)
+function part_2s(lines, n=1_000_000)
     galaxy = sparse(parse_input(lines))
     e = expand(galaxy, n)
     co = Tuple.(findall(e'))

@@ -59,7 +59,7 @@ function fastdict(net)
   num(str) = findfirst(==(str), k)
 
   x = zeros(Int, 2, length(k))
-  for i in 1:length(k)
+  for i in 1:eachindex(k)
     x[:, i] .= num.(net[k[i]])
   end
 

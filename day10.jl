@@ -86,10 +86,10 @@ L.L7LFJ|||||FJL7||LJ
 L7JLJL-JLJLJL--JLJ.L", "\n")
 
 function test()
-  @show part1(sample1)[2] == 1
-  @show part1(sample2)[2] == 4
-  @show part1(sample3)[2] == 8
-  @show part1(sample4)[2] == 10
+  @show solve(sample1)[2] == 1
+  @show solve(sample2)[2] == 4
+  @show solve(sample3)[2] == 8
+  @show solve(sample4)[2] == 10
 end
 
 #=
