@@ -1,3 +1,5 @@
+# times: 1h40m part 1, 50mins part 2
+
 parseinput(s::String) = parseinput(split(s, "\n"))
 function parseinput(lines)
     map(lines) do line
