@@ -38,17 +38,17 @@ end
 function part2(input, cycles=1000000000)
   dict = Dict()
   d = parseinput(input)
+  period = Inf
   for i in 1:1000000000
     d = cycle(d)
+
     if haskey(dict, d)
-      period = i - dict[d]
-      remaining = (cycles - i) % period
-      for i in 1:remaining
-        d = cycle(d)
-      end
-      return northload(d)
+      (period = i - dict[d])
+    else
+      dict[d] = i
     end
-    dict[d] = i
+
+    (cycles - i) % period == 0 && return northload(d)
   end
   return northload(d)
 end
