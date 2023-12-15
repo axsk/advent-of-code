@@ -6,12 +6,10 @@ northload(col::AbstractVector) = sum((col .== 'O') .* reverse(1:length(col)))
 moveend!(d::AbstractMatrix) = (foreach(moveend!, eachcol(d)); d)
 function moveend!(col)
   stones = 0
-  laststone = 0
   l = length(col)
   @inbounds for i in 1:l+1
     if i > l || col[i] == '#'
       col[i-stones:i-1] .= 'O'
-      laststone = i
       stones = 0
     elseif col[i] == 'O'
       col[i] = '.'
