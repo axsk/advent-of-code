@@ -3,142 +3,54 @@
 parseinput(lines) =
   permutedims(stack(split(lines)))
 
-function colweight(col)
-  stones = 0
-  weight = 0
-  for i in 1:length(col)
-    if col[i] == 'O'
-      stones += 1
-      @show weight += i
-      #weight += 2^(length(col) - i)
-    elseif col[i] == '#'
-      #weight += i
-      stones = 0
-    elseif col[i] == '.'
-      weight += stones
-    end
-  end
-  return weight
-end
-
-northload(col::AbstractVector) = sum((col .== 'O') .* reverse(1:length(col)))
 northload(d::AbstractMatrix) = sum(northload.(eachcol(d)))
+northload(col::AbstractVector) = sum((col .== 'O') .* reverse(1:length(col)))
 
-colweight(d::AbstractMatrix) = sum(
-  colweight(col) for col in eachcol(d)
-)
-
-
-colweightmove!(d::AbstractMatrix) = sum(
-  colweightmove!(col) for col in eachcol(d)
-)
-
-function colweightmove!(col)
-  #col = copy(col)
+moveend!(d::AbstractMatrix) = (foreach(moveend!, eachcol(d)); d)
+function moveend!(col)
   stones = 0
-  weight = 0
   laststone = 0
-  for i in 1:length(col)
-    if col[i] == 'O'
-      stones += 1
-      weight += i
-    elseif col[i] == '#'
-      col[laststone+1:i-1] .= '.'
+  l = length(col)
+  @inbounds for i in 1:l+1
+    if i > l || col[i] == '#'
       col[i-stones:i-1] .= 'O'
       laststone = i
       stones = 0
-    elseif col[i] == '.'
-      weight += stones
+    elseif col[i] == 'O'
+      col[i] = '.'
+      stones += 1
     end
   end
-  i = length(col) + 1
-  col[laststone+1:i-1] .= '.'
-  col[i-stones:i-1] .= 'O'
-  return weight
 end
+
+north(d) = rot180(moveend!(rot180(d)))
+south(d) = moveend!(copy(d))
+west(d) = rotr90(moveend!(rotl90(d)))
+east(d) = rotl90(moveend!(rotr90(d)))
+
+cycle(d) = d |> north |> west |> south |> east
 
 function part1(input)
   d = parseinput(input)
-  sum(eachcol(d)) do col
-    colweight(reverse(col))
-  end
+  northload(north(d))
 end
 
-function cycle(d)
-  north(d)
-  west(d)
-  south(d)
-  east(d)
-
-  northload(d)
-end
-
-# solved it "by hand" using cycle from here on
 function part2(input, cycles=1000000000)
+  dict = Dict()
   d = parseinput(input)
-
-  for i in 1:cycles
-    north(d)
-    west(d)
-    south(d)
-    east(d)
-
-    @show i, northload(d)
-  end
-
-  colweight(revview(d))
-  #=for i in 1:1
-    d = rotclockw(d)
-  end
-
-  for i in 1:4*cycles
-    d = rotclockw(d)
-    w = colweightmove!(d)
-
-    if i % 4 == 0
-      @show w
-      @show colweight(d)
-      @show colweight(reverse(d, dims=1))
-
-      @show colweight(reverse(rotclockw(d), dims=1))
-      @show colweight(rotclockw(d))
+  for i in 1:1000000000
+    d = cycle(d)
+    if haskey(dict, d)
+      period = i - dict[d]
+      remaining = (cycles - i) % period
+      for i in 1:remaining
+        d = cycle(d)
+      end
+      return northload(d)
     end
-
+    dict[d] = i
   end
-  =#
-
-
-  d
-end
-
-function east(d)
-  colweightmove!.(eachrow(d))
-end
-
-function north(d)
-  colweightmove!.(eachcol(revview(d)))
-end
-
-function south(d)
-  colweightmove!.(eachcol(d))
-end
-
-function west(d)
-  colweightmove!.(eachrow(revhor(d)))
-end
-
-function revview(d)
-  view(d, size(d, 1):-1:1, 1:size(d, 2))
-end
-
-function revhor(d)
-  view(d, 1:size(d, 1), size(d, 2):-1:1)
-end
-
-function rotclockw(d)  # there actually extists rotr90
-  d = permutedims(d)
-  d = reverse(d, dims=2)
-  return d
+  return northload(d)
 end
 
 ###
@@ -147,6 +59,6 @@ data = String(read("14.in"))
 ex = String(read("14.ex"))
 
 function test()
-  @assert part1(data) == 41859
-  #@assert part2(data) == 30842
+  @assert part1(data) == 109833
+  @assert part2(data) == 99875
 end
