@@ -1,7 +1,4 @@
-# part1 9 mins, part2 1:20h
-
-parseinput(lines) =
-  permutedims(stack(split(lines)))
+parseinput(lines) = permutedims(stack(split(lines)))
 
 northload(d::AbstractMatrix) = sum(northload.(eachcol(d)))
 northload(col::AbstractVector) = sum((col .== 'O') .* reverse(1:length(col)))
@@ -39,21 +36,19 @@ function part2(input, cycles=1000000000)
   dict = Dict()
   d = parseinput(input)
   period = Inf
-  for i in 1:1000000000
+  for i in 1:cycles
     d = cycle(d)
-
     if haskey(dict, d)
       (period = i - dict[d])
     else
       dict[d] = i
     end
-
     (cycles - i) % period == 0 && return northload(d)
   end
   return northload(d)
 end
 
-###
+### part1 9 mins, part2 1:20h
 
 data = String(read("14.in"))
 ex = String(read("14.ex"))
