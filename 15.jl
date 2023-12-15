@@ -4,15 +4,10 @@
 ex = "rn=1,cm-,qp=3,cm=2,qp-,pc=4,ot=9,ab=5,pc-,pc=6,ot=7"
 data = readlines("15.in")[1]
 
-function hash(str)
-  h = 0
-  for i in collect(str)
-    h += Int(i)
-    h *= 17
-    h %= 256
+hash(str) =
+  foldl(str, init=0) do h, c
+    (h + Int(c)) * 17 % 256
   end
-  return h
-end
 
 function part1()
   sum(hash.(split(data, ",")))
@@ -21,7 +16,7 @@ end
 function part2(data=data)
   instr = split(data, ",")
   dict = Dict{Int,Array{Tuple{String,Int},1}}()
-  for i in instr
+  foreach(instr) do i
     hashmap!(dict, i)
   end
   checksum(dict)
