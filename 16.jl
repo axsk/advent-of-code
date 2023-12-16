@@ -1,66 +1,47 @@
-# part 1 40; part 2 12
-
+# part 1 40mins; part 2 12 mins
 const CI = CartesianIndex
-dirlookup(dir) = dir == CI(0, 1) ? 4 : # didn't find a faster way to look this up
-                 dir == CI(0, -1) ? 3 :
-                 dir == CI(1, 0) ? 1 :
-                 dir == CI(-1, 0) ? 2 : error()
-
 parseinput(lines) = permutedims(stack(lines))
-part1(input=data) = part1(parseinput(input))
 
-function part1(
-  grid::Matrix,
-  start=(CI(1, 1), CI(0, 1)),
-)
-
-  energized = zeros(Bool, (size(grid)..., 4))
-  queue = [start]
+function energize(grid::Matrix, (pos, dir), energized=zeros(Bool, (size(grid)..., 4)))
   valid = CartesianIndices(grid)
-  while !isempty(queue)
-    pos, dir = pop!(queue)
+  while true
+    pos in valid || break
+    d = dir == CI(0, 1) ? 1 : # didn't find a faster way to look this up
+        dir == CI(0, -1) ? 2 :
+        dir == CI(1, 0) ? 3 : 4
+    energized[pos, d] && break
+    energized[pos, d] = true
 
-    while true
-      pos in valid || break
-      d = dirlookup(dir)
-      energized[pos, d] && break
-      energized[pos, d] = true
-
-      tile = grid[pos]
-      if tile == '/'
-        dir = CI(-dir[2], -dir[1])
-      elseif tile == '\\'
-        dir = CI(dir[2], dir[1])
-      elseif tile == '|' && dir[1] == 0
-        dir = CI(1, 0)
-        push!(queue, (pos - dir, -dir))
-      elseif tile == '-' && dir[2] == 0
-        dir = CI(0, 1)
-        push!(queue, (pos - dir, -dir))
-      end
-
-      pos += dir
+    tile = grid[pos]
+    if tile == '/'
+      dir = CI(-dir[2], -dir[1])
+    elseif tile == '\\'
+      dir = CI(dir[2], dir[1])
+    elseif tile == '|' && dir[1] == 0
+      dir = CI(1, 0)
+      energize(grid, (pos - dir, -dir), energized)
+    elseif tile == '-' && dir[2] == 0
+      dir = CI(0, 1)
+      energize(grid, (pos - dir, -dir), energized)
     end
+
+    pos += dir
   end
-  sum(reduce(|, energized, dims=3))
+  energized
 end
 
-# 26ms
+# 80us
+part1(input) = part1(parseinput(input))
+part1(grid::Matrix, start=(CI(1, 1), CI(0, 1))) = sum(reduce(|, energize(grid, start), dims=3))
+
+using Folds
+# 13ms / 22ms
 part2(input=data) = part2(parseinput(input))
-function part2(grid::Matrix)
+function part2(grid::Matrix; threaded=true, maximum=threaded ? Folds.maximum : Base.maximum)
   xs = CartesianIndices(grid)
   ds = [CI(1, 0), CI(-1, 0), CI(0, 1), CI(0, -1)]
   starts = ((x, d) for x in xs for d in ds if !(x - d in xs))
   maximum(x -> part1(grid, x), starts)
-end
-
-using Folds
-# 16ms
-function part2threaded(grid::Matrix)
-  xs = CartesianIndices(grid)
-  ds = [CI(1, 0), CI(-1, 0), CI(0, 1), CI(0, -1)]
-  starts = ((x, d) for x in xs for d in ds if !(x - d in xs))
-  Folds.maximum(x -> part1(grid, x), starts)
 end
 
 data = readlines("16.in")
