@@ -1,5 +1,5 @@
 # https://adventofcode.com/2023/day/15
-# part1 6 mins, part2 28 mins
+# part1 6 mins, part2 22 mins
 
 ex = "rn=1,cm-,qp=3,cm=2,qp-,pc=4,ot=9,ab=5,pc-,pc=6,ot=7"
 data = readlines("15.in")[1]

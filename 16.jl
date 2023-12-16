@@ -3,7 +3,7 @@
 parseinput(lines) = permutedims(stack(lines))
 
 const CI = CartesianIndex
-const lookup = Dict(zip([CI(1, 0), CI(-1, 0), CI(0, 1), CI(0, -1)], 1:4))
+const directions = Dict(zip([CI(1, 0), CI(-1, 0), CI(0, 1), CI(0, -1)], 1:4))
 
 function step(pos, dir, grid)
   tile = grid[pos]
@@ -22,7 +22,7 @@ function step(pos, dir, grid)
   end
 end
 
-part1(input) = part1(parseinput(input))
+part1(input=data) = part1(parseinput(input))
 
 function part1(grid::Matrix, start=(CI(1, 1), CI(0, 1)))
   energized = zeros(Bool, (size(grid)..., 4))
@@ -30,7 +30,7 @@ function part1(grid::Matrix, start=(CI(1, 1), CI(0, 1)))
   while !isempty(queue)
     pos, dir = pop!(queue)
     !(pos in CartesianIndices(grid)) && continue
-    d = lookup[dir]
+    d = directions[dir]
     energized[pos, d] && continue
     energized[pos, d] = true
     append!(queue, step(pos, dir, grid))
@@ -38,15 +38,11 @@ function part1(grid::Matrix, start=(CI(1, 1), CI(0, 1)))
   sum(reduce(|, energized, dims=3))
 end
 
-function part2(input)
-  grid = parseinput(input)
-  l = size(grid, 1)
-  starts = Iterators.flatten((
-    (CI(i, 1), CI(0, 1)),
-    (CI(i, l), CI(0, -1)),
-    (CI(1, i), CI(1, 0)),
-    (CI(l, i), CI(-1, 0))
-  ) for i in 1:l)
+part2(input=data) = part2(parseinput(input))
+function part2(grid::Matrix)
+  xs = CartesianIndices(grid)
+  ds = keys(directions)
+  starts = ((x, d) for x in xs for d in ds if !(x - d in xs))
   maximum(x -> part1(grid, x), starts)
 end
 
