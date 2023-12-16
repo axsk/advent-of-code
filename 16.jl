@@ -24,7 +24,7 @@ end
 
 part1(input=data) = part1(parseinput(input))
 
-function part1(grid::Matrix, start=(CI(1, 1), CI(0, 1)))
+function part1old(grid::Matrix, start=(CI(1, 1), CI(0, 1)))
   energized = zeros(Bool, (size(grid)..., 4))
   queue = [start]
   while !isempty(queue)
@@ -34,6 +34,43 @@ function part1(grid::Matrix, start=(CI(1, 1), CI(0, 1)))
     energized[pos, d] && continue
     energized[pos, d] = true
     append!(queue, step(pos, dir, grid))
+  end
+  sum(reduce(|, energized, dims=3))
+end
+
+dirlookup(dir) = dir == CI(0, 1) ? 4 : # didn't find a faster way to look this up
+                 dir == CI(0, -1) ? 3 :
+                 dir == CI(1, 0) ? 1 :
+                 dir == CI(-1, 0) ? 2 : error()
+
+function part1fast(grid::Matrix, start=(CI(1, 1), CI(0, 1)))
+  energized = zeros(Bool, (size(grid)..., 4))
+  queue = [start]
+  valid = CartesianIndices(grid)
+  while !isempty(queue)
+    pos, dir = pop!(queue)
+
+    while true
+      pos in valid || break
+      d = dirlookup(dir)
+      energized[pos, d] && break
+      energized[pos, d] = true
+
+      tile = grid[pos]
+      if tile == '/'
+        dir = CI(-dir[2], -dir[1])
+      elseif tile == '\\'
+        dir = CI(dir[2], dir[1])
+      elseif tile == '|' && dir[1] == 0
+        dir = CI(1, 0)
+        push!(queue, (pos - dir, -dir))
+      elseif tile == '-' && dir[2] == 0
+        dir = CI(0, 1)
+        push!(queue, (pos - dir, -dir))
+      end
+
+      pos += dir
+    end
   end
   sum(reduce(|, energized, dims=3))
 end
