@@ -8,33 +8,31 @@ parseinput(lines) = permutedims(parse.(Int, stack(lines)))
 
 const CI = CartesianIndex
 const directions = [CI(-1, 0), CI(0, -1), CI(1, 0), CI(0, 1)]
+neighbors(i) = i % 2 == 0 ? (1, 3) : (2, 4)
 
-function solve(grid, part2=false)
+function solve(grid, ispart2=false)
   srcs = CartesianIndex{3}[]
-  dest = CartesianIndex{3}[]
+  dsts = CartesianIndex{3}[]
   weights = Int[]
-
-  for (i, dir) in enumerate(directions)
-    for a in CartesianIndices(grid)
-      for lr in [1, -1]
-        c = 0
-        for d in (part2 ? (1:10) : (1:3))
-          target = a + d * dir
-          target in CartesianIndices(grid) || break
-          c += grid[target]
-          part2 && d < 4 && continue
-          push!(srcs, CI(a, i))
-          push!(dest, CI(target, (i + lr + 3) % 4 + 1))
-          push!(weights, c)
+  for (layer, direction) in enumerate(directions)
+    for src in CartesianIndices(grid)
+      cost = 0
+      for steps in (ispart2 ? (1:10) : (1:3))
+        dst = src + steps * direction
+        dst in CartesianIndices(grid) || break
+        cost += grid[dst]
+        ispart2 && steps < 4 && continue
+        for neigh in neighbors(layer)
+          push!(srcs, CI(src, layer))
+          push!(dsts, CI(dst, neigh))
+          push!(weights, cost)
         end
       end
     end
   end
 
   lin = LinearIndices((1:size(grid, 1), 1:size(grid, 2), 1:4))
-  srcs = lin[srcs]
-  dest = lin[dest]
-  g = SimpleWeightedDiGraph(srcs, dest, weights)
+  g = SimpleWeightedDiGraph(lin[srcs], lin[dsts], weights)
 
   start = lin[1, 1, 1:4]
   finish = lin[end, end, 1:4]
