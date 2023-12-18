@@ -20,12 +20,10 @@ function part1(lines, parser=parseinput)
     x = 0
     y = 0
     a = 0
-    xy = []
     totlen = 0
     for (dir, len) in instr
         dx, dy = dir .* len
         x, y = (x, y) .+ (dx, dy)
-        push!(xy, (x, y))
         a += dx * y
         totlen += len
     end
@@ -35,6 +33,7 @@ end
 
 part2(lines) = part1(lines, parseinput2)
 
+###
 
 function test()
     @assert part1(ex) == 62

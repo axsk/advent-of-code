@@ -1,14 +1,15 @@
 # part 1 40mins; part 2 12 mins
 const CI = CartesianIndex
 parseinput(lines) = permutedims(stack(lines))
+dirnum(dir) = dir == CI(0, 1) ? 1 : # didn't find a faster way to look this up
+              dir == CI(0, -1) ? 2 :
+              dir == CI(1, 0) ? 3 : 4
 
 function energize(grid::Matrix, (pos, dir), energized=zeros(Bool, (size(grid)..., 4)))
   valid = CartesianIndices(grid)
   while true
     pos in valid || break
-    d = dir == CI(0, 1) ? 1 : # didn't find a faster way to look this up
-        dir == CI(0, -1) ? 2 :
-        dir == CI(1, 0) ? 3 : 4
+    d = dirnum(dir)
     energized[pos, d] && break
     energized[pos, d] = true
 
@@ -37,11 +38,11 @@ part1(grid::Matrix, start=(CI(1, 1), CI(0, 1))) = sum(reduce(|, energize(grid, s
 using Folds
 # 13ms / 22ms
 part2(input=data) = part2(parseinput(input))
-function part2(grid::Matrix; threaded=true, maximum=threaded ? Folds.maximum : Base.maximum)
+function part2(grid::Matrix)
   xs = CartesianIndices(grid)
   ds = [CI(1, 0), CI(-1, 0), CI(0, 1), CI(0, -1)]
   starts = ((x, d) for x in xs for d in ds if !(x - d in xs))
-  maximum(x -> part1(grid, x), starts)
+  Folds.maximum(x -> part1(grid, x), starts)
 end
 
 data = readlines("16.in")

@@ -11,8 +11,8 @@ const directions = [CI(-1, 0), CI(0, -1), CI(1, 0), CI(0, 1)]
 neighbors(i) = i % 2 == 0 ? (1, 3) : (2, 4)
 
 function solve(grid, ispart2=false)
-  srcs = CartesianIndex{3}[]
-  dsts = CartesianIndex{3}[]
+  srcs = CI{3}[]
+  dsts = CI{3}[]
   weights = Int[]
   for (layer, direction) in enumerate(directions)
     for src in CartesianIndices(grid)

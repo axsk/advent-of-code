@@ -2,6 +2,8 @@
 AdventOfCode = "7ef4cfdd-3fec-4d8b-b242-bcc5161d01d5"
 Chain = "8be319e6-bccf-4806-a6f7-6fae938471bc"
 Folds = "41a02a25-b8f0-4f67-bc48-60067656b558"
+Graphs = "86223c79-3864-5bf0-83f7-82e725a168b6"
 IterTools = "c8e1da08-722c-5040-9ed9-7db0dc04731e"
 Lazy = "50d2b5c4-7a5e-59d5-8109-a42b560f39c0"
+SimpleWeightedGraphs = "47aef6b3-ad0c-573a-a1e2-d07658019622"
 Transducers = "28d57a85-8fef-5791-bfe6-a80928e7c999"
