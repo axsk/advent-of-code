@@ -1,36 +1,31 @@
+# part1: 38 mins part2: 36 mins
+
 ex = readchomp("19.ex")
 
 function parseinput(str)
-  rules = Dict()
-  inst, parts = split(str, "\n\n")
-  inst = split(inst, "\n")
+  workflows = Dict()
+  wfs, ps = split(str, "\n\n")
+  wfs = split(wfs, "\n")
 
-  for i in inst
-    name, inst = split(i[1:end-1], "{")
-
-    ivec = []
-    r = split(inst, ",")
-    for r in r[1:end-1]
-      push!(ivec, parsecheck(r))
-    end
-
-    rules[name] = (ivec, r[end])
+  for wf in wfs
+    name, rules = split(wf[1:end-1], "{")
+    rules = split(rules, ",")
+    rvec = map(parserule, rules[1:end-1])
+    workflows[name] = (rvec, rules[end])
   end
 
-  ps = []
-  for p in split(parts)
+  parts = map(split(ps)) do p
     x, m, a, s = parse.(Int, eachmatch(r"(\d+)", p) .|> x -> x.match)
-    push!(ps, (; x, m, a, s))
+    (; x, m, a, s)
   end
-  rules, ps
+  workflows, parts
 end
 
-function parsecheck(i)
-
-  p, s, v, t = match(r"(.*)([<>])(\d+):(.*)", i)
-  v = parse(Int, v)
-  comp = s == ">" ? >(v) : <(v)
-  return Symbol(p), comp, t
+function parserule(str)
+  prop, sign, val, target = match(r"(.*)([<>])(\d+):(.*)", str)
+  val = parse(Int, val)
+  comp = sign == ">" ? >(val) : <(val)
+  return Symbol(prop), comp, target
 end
 
 function part1(data)
@@ -41,28 +36,25 @@ function part1(data)
 end
 
 function evalpart(part, workflow, rules)
-  @show workflow
   workflow == "A" && return true
   workflow == "R" && return false
   rls, exit = rules[workflow]
   for r in rls
-    p, comp, t = r
-    comp(getfield(part, p)) && return evalpart(part, t, rules)
+    prop, comp, t = r
+    comp(part[prop]) && return evalpart(part, t, rules)
   end
   return evalpart(part, exit, rules)
 end
-
 
 function evalint(partint, workflow, rules)
   intsize = prod(length.(values(partint)))
   workflow == "A" && return intsize
   workflow == "R" && return 0
   intsize == 0 && return 0
-  @show workflow
   rls, exit = rules[workflow]
   accepted = 0
   for r in rls
-    p, comp, t = r
+    prop, comp, t = r
     trueint, falseint = splitinterval(partint, r)
     accepted += evalint(trueint, t, rules)
     partint = falseint
@@ -72,7 +64,7 @@ function evalint(partint, workflow, rules)
 end
 
 function splitinterval(partint, (p, comp, t))
-  a, b = extrema(getfield(partint, p))
+  a, b = extrema(partint[p])
   x = comp.x
   if comp.f == <
     i1 = (a:min(b, x - 1))
@@ -81,15 +73,13 @@ function splitinterval(partint, (p, comp, t))
     i1 = (max(a, x + 1):b)
     i2 = (a:min(x, b))
   end
-  @assert length(i1) + length(i2) == length(getfield(partint, p))
-  @show pi1 = (; partint..., p => i1)
-  @show pi2 = (; partint..., p => i2)
+  pi1 = (; partint..., p => i1)
+  pi2 = (; partint..., p => i2)
   pi1, pi2
 end
 
 function part2(data)
-  rules, parts = parseinput(data)
-
+  rules, _ = parseinput(data)
   startint = (x=1:4000, m=1:4000, a=1:4000, s=1:4000)
   evalint(startint, "in", rules)
 end
