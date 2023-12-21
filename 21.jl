@@ -4,7 +4,7 @@ const CI = CartesianIndex
 using SparseArrays
 using Graphs
 
-LIMIT = 26501365
+const LIMIT = 26501365
 
 ex = split("...........
 .....###.#.
@@ -17,6 +17,10 @@ ex = split("...........
 .##.#.####.
 .##..##.##.
 ...........", "\n")
+
+free = split("...
+.S.
+...")
 
 data = readlines("21.in")
 
@@ -163,3 +167,77 @@ function loopy(garden, s, limit=LIMIT)
 end
 
 reshapesquare(d) = reshape(d, Int(sqrt(length(d))), Int(sqrt(length(d))))
+
+#interior = 183 + 215 + 169 + 223 - 3
+#outside = 198 + 214 + 188 + 218
+#blocksum = interior + outside
+# check for off by one error
+# 202300
+
+
+function divideinds()
+  inds = LinearIndices((1:131, 1:131))
+  inner = Int[]
+  outer = Int[]
+
+  for i in 1:131, j in 1:131
+    if abs(i - 66) + abs(j - 66) <= 65
+      push!(inner, inds[i, j])
+    else
+      push!(outer, inds[i, j])
+    end
+  end
+  @assert length(inner) + length(outer) == length(inds)
+  sort(inner), sort(outer)
+end
+
+part2() = part2(parseinput(data)...)
+
+function test2()
+  garden, s = parseinput(data)
+  garden .= '.'
+  @show sol = part2(garden, s)
+  @show tst = 2 * (LIMIT^2 + LIMIT) ÷ 2 + 2 * (LIMIT + 1) ÷ 2
+  @show tst-sol
+  @assert sol == tst
+end
+
+function part2(garden, s)
+  #garden, s = parseinput(data)
+  d = dijkstra_shortest_paths(graph(garden), tolinindex(s, garden))
+  D = reshape(d.dists, 131, 131)
+
+  reps = (LIMIT - 65) ÷ 131
+
+  innr, outr = divideinds()
+
+  blockb = filter(D) do d
+    d % 2 == 1 && d < 10000
+  end |> length
+
+  blockw = filter(D) do d
+    d % 2 == 0 && d < 10000
+  end |> length
+
+  #@assert blockb + blockw == sum(garden .== '.') - 3
+
+  outsideb = filter(D[outr]) do d
+    d % 2 == 1 && d < 10000
+  end |> length
+
+  triangleb = ((reps ÷ 2)^2 + (reps ÷ 2)) ÷ 2 * 2
+  trianglew = triangleb - reps ÷ 2
+
+  @assert triangleb + trianglew == (reps^2 + reps) ÷ 2
+
+  4 * (triangleb * blockb + trianglew * blockw) - (reps + 1) * outsideb + blockb
+end
+
+# 636390620146444
+# 636389856463944
+
+# 636389856463944
+# 636390624597044
+
+# after reps+1
+# 636390624593247
