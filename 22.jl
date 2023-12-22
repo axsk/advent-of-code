@@ -5,10 +5,11 @@ function parseinput(lines)
         rngs = nums[1]:nums[4], nums[2]:nums[5], nums[3]:nums[6]
         push!(bricks, rngs)
     end
-    sort(bricks, by=x -> x[3][1])
+    return relations(bricks)
 end
 
 function relations(bricks)
+    bricks = sort(bricks, by=x -> x[3][1])
     plane = ones(Int, 10, 10)
     ids = zeros(Int, 10, 10)
     below = [Int[] for i in 1:length(bricks)]
@@ -26,33 +27,41 @@ function relations(bricks)
     return above, below
 end
 
-safetoremove((aboves, belows)) =
-    sum(aboves) do allaboves
-        all(length.(belows[allaboves]) .> 1)
+function safetoremove((above, below))
+    critical = Set{Int}()
+    for b in below
+        length(b) == 1 && push!(critical, b[1])
     end
-
-part1(data=data) = safetoremove(relations(parseinput(data)))
-
-function howmanyfall(i, (aboves, belows))
-    remove = Int[i]
-    removed = Int[]
-    while !isempty(remove)
-        removed = [removed; remove]
-        allaboves = unique(Iterators.flatten(aboves[remove]))
-        remove = let removed = removed  # let trick to avoid Box
-            filter(allaboves) do above
-                all(in(removed), belows[above])
-            end
-        end
-    end
-    length(removed) - 1
+    length(below) - length(critical)
 end
 
-howmanyfall((aboves, belows)) = sum(howmanyfall(i, (aboves, belows)) for i in 1:length(aboves))
+part1(data=data) = safetoremove(parseinput(data))
 
-part2(data=data) = howmanyfall(relations(parseinput(data)))
+function howmanyfall(i, (aboves, belows))
+    counts = -1
+    supports = length.(belows)
+    q = [i]
+    while !isempty(q)
+        counts += 1
+        b = pop!(q)
+        for i in aboves[b]
+            supports[i] -= 1
+            supports[i] == 0 && push!(q, i)
+        end
+    end
+    return counts
+end
+
+howmanyfall((aboves, belows)) = sum(howmanyfall(i, (aboves, belows)) for i in eachindex(aboves))
+
+part2(data=data) = howmanyfall(parseinput(data))
 
 ###
+
+function bothparts(data=data)
+    rel = parseinput(data)
+    safetoremove(rel), howmanyfall(rel)
+end
 
 data = readlines("22.in")
 ex = split("1,0,1~1,2,1
@@ -71,7 +80,7 @@ function test()
 end
 
 function checkconsistent(aboves, belows)
-    for i in 1:length(belows)
+    for i in eachindex(belows)
         if !isempty(belows[i])
             x = vcat(aboves[belows[i]]...)
             if !(i in x)
