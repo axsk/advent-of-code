@@ -28,16 +28,31 @@ function parseinput(data, part1=true)
     return neighs
 end
 
-function shiftinds(neighs)
-    shift = Dict(zip(keys(neighs), 1:length(neighs)))
-    new = empty(neighs)
-    for (k, v) in neighs
-        new[shift[k]] = shiftval.(v, Ref(shift))
+function longestpath(graph)
+    start, finish = extrema(keys(graph))  # TODO: this is not valind for part1
+    visited = zeros(maximum(keys(graph)))
+    maxlen = 0
+    function travrec(pos, len)
+        pos == finish && return len
+        for n in graph[pos]
+            n, w = nodeweight(n)
+            visited[n] == 1 && continue
+            visited[n] = 1
+            t = travrec(n, len + w)
+            t > maxlen && (maxlen = t)
+            visited[n] = 0
+        end
+        return 0
     end
-    new
+    @time travrec(start, 0)
+    return maxlen
 end
-shiftval(val::Int, shift) = shift[val]
-shiftval((n, w), shift) = (shift[n], w)
+
+nodeweight(n::Int) = n, 1
+nodeweight((n, w)) = n, w  # for part 2
+
+part1(data=data) = longestpath(parseinput(data, true))
+part2(data=data) = longestpath(contract(parseinput(data, false)))  # 20 secs
 
 function contract(graph)
     checkpoints = [node for (node, neighs) in graph if length(neighs) != 2]
@@ -55,34 +70,19 @@ function contract(graph)
         end
         weightedgraph[c] = neighs
     end
-    return shiftinds(weightedgraph)
+    return (weightedgraph)
 end
 
-nodeweight(n::Int) = n, 1
-nodeweight((n, w)) = n, w
-
-function trav2(ns)
-    start, finish = [k for (k, v) in ns if length(v) == 1]
-    visited = zeros(maximum(keys(ns)))
-    maxlen = 0
-    function travrec(pos, len)
-        pos == finish && return len
-        for n in ns[pos]
-            n, w = nodeweight(n)
-            visited[n] == 1 && continue
-            visited[n] = 1
-            t = travrec(n, len + w)
-            t > maxlen && (maxlen = t)
-            visited[n] = 0
-        end
-        return 0
+function shiftinds(neighs)
+    shift = Dict(zip(collect(sort(keys(neighs))), 1:length(neighs)))  # sort to prevent exits
+    new = empty(neighs)
+    for (k, v) in neighs
+        new[shift[k]] = shiftval.(v, Ref(shift))
     end
-    @time travrec(start, 0)
-    return maxlen
+    new
 end
-
-part1(data) = trav2(parseinput(data, true))
-part2(data) = trav2(contract(parseinput(data, false)))  # 20 secs
+shiftval(val::Int, shift) = shift[val]
+shiftval((n, w), shift) = (shift[n], w)
 
 ###
 
