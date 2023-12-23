@@ -1,13 +1,9 @@
 data = stack(readlines("23.in"))
 ex = stack(readlines("23.ex"))
 
-function startend(data)
-    dots = findall(==('.'), data)
-    return dots[1], dots[end]
-end
-
 const CI = CartesianIndex
-const directions = (CI(1, 0), CI(-1, 0), CI(0, 1), CI(0, -1))
+const arrows = ('>', '<', 'v', '^')
+const directions = [CI(1, 0), CI(-1, 0), CI(0, 1), CI(0, -1)]
 
 part1(data=data) = walk(data)
 
@@ -73,7 +69,7 @@ function mygraph(lab, part1=false)
     for (k, v) in edges
         A[k, v] .= 1
     end
-    for (node, links) in edges
+    #=for (node, links) in edges
         if length(links) == 2
             l1, l2 = links
             replace!(edges[l1], node => l2)
@@ -82,6 +78,7 @@ function mygraph(lab, part1=false)
             A[l1, l2] = A[l2, l1] = A[node, l1] + A[node, l2]
         end
     end
+    =#
     #return edges
     k = collect(keys(edges))
     A = A[k, :][:, k]
@@ -112,12 +109,95 @@ function trav(hist, steps, len, ns, ws, finish)
         w = ws[pos][j]
         hist[steps+1] = n
         t = trav(hist, steps + 1, len + w, ns, ws, finish)
-        m = max(t, m)
+        t > m && (m = t)
     end
     return m
 end
 
 part2(data) = trav(mygraph(data, false))
+
+function alloweddirections(c, part1=true)
+    c == '#' && return CI[]
+    part1 && for (a, d) in zip(arrows, directions)
+        c == a && return [d]
+    end
+    return directions
+end
+
+function parseinput(data, part1=true)
+    cis = CartesianIndices(data)
+    lis = LinearIndices(data)
+    neighs = Dict{Int,Vector{Int}}()
+    for (i, c) in zip(lis, cis)
+        neigh = Int[]
+        for d in alloweddirections(data[i], part1)
+            nc = c + d
+            nc in cis || continue
+            data[nc] == '#' && continue
+            push!(neigh, lis[nc])
+        end
+        isempty(neigh) && continue
+        neighs[i] = neigh
+    end
+    return neighs
+end
+
+shiftval(val::Int, shift) = shift[val]
+shiftval((n, w), shift) = (shift[n], w)
+
+function shiftinds(neighs)
+    shift = Dict(zip(keys(neighs), 1:length(neighs)))
+    new = empty(neighs)
+    for (k, v) in neighs
+        new[shift[k]] = shiftval.(v, Ref(shift))
+    end
+    new
+end
+
+
+function contract(graph)
+    checkpoints = [node for (node, neighs) in graph if length(neighs) != 2]
+    weightedgraph = Dict()
+    for c in checkpoints
+        neighs = []
+        for head in graph[c]
+            prev = c
+            w = 1
+            while length(graph[head]) == 2
+                head, prev = only(setdiff(graph[head], prev)), head
+                w += 1
+            end
+            push!(neighs, (head, w))
+        end
+        weightedgraph[c] = neighs
+    end
+    return shiftinds(weightedgraph)
+end
+
+nodeweight(n::Int) = n, 1
+nodeweight((n, w)) = n, w
+
+# 1 min to find sol,  much longer to finish
+function trav2(ns)
+    start, finish = [k for (k, v) in ns if length(v) == 1]
+    @show start, finish
+    visited = zeros(maximum(keys(ns)))
+    maxlen = 0
+    function travrec(pos, len)
+        pos == finish && return len
+        for n in ns[pos]
+            n, w = nodeweight(n)
+            visited[n] == 1 && continue
+            visited[n] = 1
+            t = travrec(n, len + w)
+            t > maxlen && (@show maxlen = t)
+            visited[n] = 0
+        end
+        return 0
+    end
+    travrec(start, 0)
+    return maxlen
+end
 
 function test()
     @assert part1(ex) == 94
