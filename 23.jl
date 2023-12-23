@@ -9,6 +9,7 @@ end
 const CI = CartesianIndex
 const directions = (CI(1, 0), CI(-1, 0), CI(0, 1), CI(0, -1))
 
+part1(data=data) = walk(data)
 
 function walk(lab)
     start, finish = startend(lab)
@@ -31,13 +32,9 @@ function walk(lab)
                 push!(newpaths, (s, nseen, npos))
             end
         end
-        paths = prunepaths(newpaths)
-        global debugpaths = paths
-        @show i, length(paths)
+        paths = newpaths
         isempty(paths) && break
-        #@show i, length(paths)
     end
-    @show maxlengths
     isempty(maxlengths) && return nothing
     return maximum(maxlengths)
 end
@@ -61,57 +58,7 @@ function allowedsteps(oldstep, pos, lab, part1=true)
     [s for s in directions if isvalid(s)]
 end
 
-part1(data=data) = walk(data)
-
-function test()
-    part1(ex) == 94
-end
-
-function traverse(lab, part1=false)
-    start, finish = startend(lab)
-    down = CI(0, 1)
-    seen = Dict((start, down) => 0)
-    q = [(start, down, [start])]
-    maxhist = []
-    while !isempty(q)
-        (pos, st, hist) = pop!(q)
-        while true
-            pos += st
-            if pos in hist
-                break
-            end
-            push!(hist, pos)
-            n = length(hist)
-            if get!(seen, (pos, st), 0) > n
-                break
-            end
-            seen[(pos, st)] = n
-            if pos == finish
-                vis(hist)
-                break
-            end
-
-            allowed = allowedsteps(st, pos, lab, part1)
-
-            if isempty(allowed)
-                break
-            end
-            st, later = Iterators.peel(allowed)
-            append!(q, map(s -> (pos, s, copy(hist)), later))
-        end
-    end
-    @show seen[finish, CI(0, 1)]
-    maxhist
-end
-
-using SparseArrays
-using Plots
-function vis(hist, title="")
-    x = fill(0, 23, 23)
-    x[hist] .= 1
-    heatmap(rotl90(x); title) |> display
-end
-
+# TODO: clean up
 function mygraph(lab, part1=false)
     cis = CartesianIndices(lab)
     lis = LinearIndices(lab)
@@ -122,7 +69,6 @@ function mygraph(lab, part1=false)
         isempty(as) && continue
         edges[i] = [lis[ci+s] for s in as]
     end
-    @show sum(length.(values(edges)))
     A = zeros(Int, size(lab) .^ 2)
     for (k, v) in edges
         A[k, v] .= 1
@@ -142,7 +88,7 @@ function mygraph(lab, part1=false)
     conns = Vector{Int}[]
     weights = Vector{Int}[]
     for i in 1:size(A, 1)
-        @show s = findall(A[:, i] .> 0)
+        s = findall(A[:, i] .> 0)
         push!(conns, s)
         push!(weights, A[s, i])
     end
@@ -150,25 +96,32 @@ function mygraph(lab, part1=false)
 
 end
 
-function longestpath((ns, ws)=mygraph(ex))
-
+function trav((ns, ws)=mygraph(ex))
     start, finish = findall(length.(ns) .== 1)
-    hist = zeros(Int, length(ns))
-    hist[start] = 1
-    q = [(start, hist, 0)]
-    maxl = 0
-    while !isempty(q)
-        pos, hist, len = pop!(q)
-        if pos == finish
-            maxl = max(len, maxl)
-        end
-        for (next, w) in zip(ns[pos], ws[pos])
-            if hist[next] == 0
-                h = copy(hist)
-                h[next] = 1
-                push!(q, (next, h, len + w))
-            end
-        end
+    hist = fill(start, length(ns))
+    trav(hist, 1, 0, ns, ws, finish)
+end
+
+function trav(hist, steps, len, ns, ws, finish)
+    pos = hist[steps]
+    pos == finish && return len
+    m = 0
+    @inbounds @views for j in 1:length(ns[pos])
+        n = ns[pos][j]
+        n in hist[1:steps] && continue
+        w = ws[pos][j]
+        hist[steps+1] = n
+        t = trav(hist, steps + 1, len + w, ns, ws, finish)
+        m = max(t, m)
     end
-    maxl
+    return m
+end
+
+part2(data) = trav(mygraph(data, false))
+
+function test()
+    @assert part1(ex) == 94
+    @assert part1(data) == 2094
+    @assert part2(ex) == 154
+    @assert part2(data) == 6442
 end
