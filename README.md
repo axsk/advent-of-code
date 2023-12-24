@@ -1,4 +1,4 @@
-# AOC23.jl
+# advent-of-code
 
 Attempt at the https://adventofcode.com/ using Julia.
 
