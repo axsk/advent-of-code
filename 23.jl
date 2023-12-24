@@ -1,6 +1,6 @@
 const CI = CartesianIndex
 const arrows = ('>', '<', 'v', '^')
-const directions = [CI(1, 0), CI(-1, 0), CI(0, 1), CI(0, -1)]
+const directions = (CI(1, 0), CI(-1, 0), CI(0, 1), CI(0, -1))
 
 function alloweddirections(c, part1=true)
     c == '#' && return CI[]
@@ -30,21 +30,21 @@ end
 
 function longestpath(graph)
     start, finish = extrema(keys(graph))  # TODO: this is not valind for part1
-    visited = zeros(maximum(keys(graph)))
+    visited = zeros(Bool, maximum(keys(graph)))
+    travrec(start, 0, visited, finish, graph)
+end
+
+function travrec(pos, len, visited, finish, graph)
     maxlen = 0
-    function travrec(pos, len)
-        pos == finish && return len
-        for n in graph[pos]
-            n, w = nodeweight(n)
-            visited[n] == 1 && continue
-            visited[n] = 1
-            t = travrec(n, len + w)
-            t > maxlen && (maxlen = t)
-            visited[n] = 0
-        end
-        return 0
+    pos == finish && return len
+    @inbounds for n in graph[pos]
+        n, w = nodeweight(n)
+        visited[n] && continue
+        visited[n] = true
+        t = travrec(n, len + w, visited, finish, graph)
+        t > maxlen && (maxlen = t)
+        visited[n] = false
     end
-    @time travrec(start, 0)
     return maxlen
 end
 
@@ -53,6 +53,8 @@ nodeweight((n, w)) = n, w  # for part 2
 
 part1(data=data) = longestpath(parseinput(data, true))
 part2(data=data) = longestpath(contract(parseinput(data, false)))  # 20 secs
+
+### graph pruning
 
 function contract(graph)
     checkpoints = [node for (node, neighs) in graph if length(neighs) != 2]
@@ -70,11 +72,12 @@ function contract(graph)
         end
         weightedgraph[c] = neighs
     end
-    return (weightedgraph)
+    weightedgraph = shiftinds(weightedgraph)
+    return Dict{Int,Vector{Tuple{Int,Int}}}(weightedgraph)
 end
 
 function shiftinds(neighs)
-    shift = Dict(zip(collect(sort(keys(neighs))), 1:length(neighs)))  # sort to prevent exits
+    shift = Dict(zip(sort(collect(keys(neighs))), 1:length(neighs)))  # sort to prevent exits
     new = empty(neighs)
     for (k, v) in neighs
         new[shift[k]] = shiftval.(v, Ref(shift))
@@ -91,8 +94,8 @@ ex = stack(readlines("23.ex"))
 
 using Test
 function test()
-    @test_broken @show(part1(ex)) == 94
-    @test_broken @show(part1(data)) == 2094
+    @test @show(part1(ex)) == 94
+    @test @show(part1(data)) == 2094
     @test @show(part2(ex)) == 154
     @test @show(part2(data)) == 6442
 end
