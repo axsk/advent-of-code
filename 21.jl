@@ -1,4 +1,5 @@
-# part1: 19 mins
+# part1: 19 mins, part2: many hours
+# this file is in a horrible state
 
 const CI = CartesianIndex
 using SparseArrays
@@ -105,66 +106,6 @@ function test()
   @assert part2() > 636389856463944
 end
 
-####
-
-
-function extend(garden, s, times=3)
-  news = CartesianIndices(garden)[s] .+ div(times - 1, 2) * CI(size(garden)...)
-  newgarden = repeat(garden, outer=(times, times))
-  news = LinearIndices(newgarden)[news]
-  newgarden, news
-end
-
-function countdown(garden, s)
-  bs = size(garden)
-  ng, ns = extend(garden, s)
-  d = dijkstra_shortest_paths(graph(ng), ns)
-  centerblock = CI(bs[1] .+ (1:bs[1]), bs[2] .+ (1:bs[2]))
-  downblock = CI(2 * bs[1] .+ (1:bs[1]), bs[2] .+ (1:bs[2]))
-  cb = d.dists[LinearIndices(newgarden)[centerblock...]]
-  db = d.dists[LinearIndices(newgarden)[downblock...]]
-
-  delta = db .- cb[end:end, :]
-
-  fields = 0
-  limit = 1_000_000
-  lastrow = cb[end, :]
-  for i in 1:11, j in 1:11
-    #cost = cb[end, j] + delta[end, j] * repetitions + delta[i, j]
-    reps = fld(limit - delta[i, j] - lastrow, delta[end, j])
-    ## TODO ACCOUNT FOR UNEVEN STEPS
-    fields += reps
-  end
-  fields += reps
-end
-
-
-fixbig!(x) = x[x.>10*LIMIT] .= -1
-
-function loopy(garden, s, limit=LIMIT)
-  bs = size(garden)
-  ng, ns = extend(garden, s)
-  d = dijkstra_shortest_paths(graph(ng), ns)
-  dists = reshape(d.dists, size(ng)...)
-  dists = BlockArray(dists, [bs[1], bs[1], bs[1]], [bs[2], bs[2], bs[2]])
-
-  vis = 0
-  for i in 1:bs[1], j in 1:bs[2]
-    start = dists[Block(2, 2)][i, j]
-    deltai = dists[Block(3, 2)][end, j] - dists[Block(2, 2)][end, j]
-
-
-    curr = start
-    while curr <= limit
-      if curr % 2 == 0
-        vis += 1
-      end
-      curr += deltai
-    end
-    #start +=
-  end
-
-end
 
 reshapesquare(d) = reshape(d, Int(sqrt(length(d))), Int(sqrt(length(d))))
 
@@ -219,8 +160,6 @@ function part2(garden, s)
     d % 2 == 0 && d < 10000
   end |> length
 
-  #@assert blockb + blockw == sum(garden .== '.') - 3
-
   outsideb = filter(D[outr]) do d
     d % 2 == 1 && d < 10000
   end |> length
@@ -233,11 +172,74 @@ function part2(garden, s)
   4 * (triangleb * blockb + trianglew * blockw) - (reps + 1) * outsideb + blockb
 end
 
-# 636390620146444
-# 636389856463944
 
-# 636389856463944
-# 636390624597044
 
-# after reps+1
-# 636390624593247
+#= half baked stuff that never got there
+# i still think i found a unique solution where i split the area into 4 triangles
+# for each of them i can compute the straight reachables via modulo and the midpoint connections.
+# the symmetry came in nicely as well as by computing the dists to all 4 "connecting points" 
+# one solved all 4 trinagles computing only on one.
+# i also implemented (and apparently lost it)...
+# the answers where wrong because for the non-straight fields i needed to use the diagonal connections...
+
+# however, i don't even know what the rest below here is about
+
+function extend(garden, s, times=3)
+  news = CartesianIndices(garden)[s] .+ div(times - 1, 2) * CI(size(garden)...)
+  newgarden = repeat(garden, outer=(times, times))
+  news = LinearIndices(newgarden)[news]
+  newgarden, news
+end
+
+function countdown(garden, s)
+  bs = size(garden)
+  newgarden, ns = extend(garden, s)
+  d = dijkstra_shortest_paths(graph(newgarden), ns)
+  centerblock = CI(bs[1] .+ (1:bs[1]), bs[2] .+ (1:bs[2]))
+  downblock = CI(2 * bs[1] .+ (1:bs[1]), bs[2] .+ (1:bs[2]))
+  cb = d.dists[LinearIndices(newgarden)[centerblock...]]
+  db = d.dists[LinearIndices(newgarden)[downblock...]]
+
+  delta = db .- cb[end:end, :]
+
+  fields = 0
+  limit = 1_000_000
+  lastrow = cb[end, :]
+  for i in 1:11, j in 1:11
+    #cost = cb[end, j] + delta[end, j] * repetitions + delta[i, j]
+    reps = fld(limit - delta[i, j] - lastrow, delta[end, j])
+    ## TODO ACCOUNT FOR UNEVEN STEPS
+    fields += reps
+  end
+  fields += reps
+end
+
+
+fixbig!(x) = x[x.>10*LIMIT] .= -1
+
+function loopy(garden, s, limit=LIMIT)
+  bs = size(garden)
+  ng, ns = extend(garden, s)
+  d = dijkstra_shortest_paths(graph(ng), ns)
+  dists = reshape(d.dists, size(ng)...)
+  dists = BlockArray(dists, [bs[1], bs[1], bs[1]], [bs[2], bs[2], bs[2]])
+
+  vis = 0
+  for i in 1:bs[1], j in 1:bs[2]
+    start = dists[Block(2, 2)][i, j]
+    deltai = dists[Block(3, 2)][end, j] - dists[Block(2, 2)][end, j]
+
+
+    curr = start
+    while curr <= limit
+      if curr % 2 == 0
+        vis += 1
+      end
+      curr += deltai
+    end
+    #start +=
+  end
+
+end
+
+=#
