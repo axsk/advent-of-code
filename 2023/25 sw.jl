@@ -35,19 +35,20 @@ data = readlines("25.in")
 
 function parseinput(lines)
     nodes = Dict()
-    edges = SimpleEdge[]
+    I = Int[]
+    J = Int[]
     for l in lines
         ns = split(l)
         i = get!(nodes, ns[1][1:end-1], length(nodes) + 1)
         for n in ns[2:end]
             j = get!(nodes, n, length(nodes) + 1)
-            push!(edges, SimpleEdge(i, j))
-            push!(edges, SimpleEdge(j, i))
+            push!(I, i)
+            push!(J, j)
         end
     end
-    g = SimpleGraphFromIterator(edges)
-    g = SimpleWeightedGraph(g)
-    Int.(g.weights)
+    n = maximum(values(nodes))
+    A = sparse(I, J, ones(length(I)), n, n)
+    A = A + A'
 end
 
 function part1(data=data)
