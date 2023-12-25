@@ -2,7 +2,7 @@ using IterTools
 using Lazy: @>>
 using Chain
 
-data = readlines("data/day10.txt")
+data = readlines("10.in")
 parseinput(lines) = permutedims(reduce(hcat, collect.(lines)))
 
 N = [-1, 0]
