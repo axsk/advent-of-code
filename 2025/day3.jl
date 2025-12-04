@@ -1,4 +1,4 @@
-@views function joltage(n, b::AbstractVector, acc=0)
+@views @inbounds function joltage(n, b::AbstractVector, acc=0)
   n == 0 && return acc
   n -= 1
   digit, loc = findmax((b[1:end-n]))
@@ -12,6 +12,7 @@ function day3(input=readlines("day3.in")) # 260 microseconds
   sum(joltage(12, line) for line in input)
 end
 
+
 ###
 
 test() = day3(split(
@@ -20,11 +21,30 @@ test() = day3(split(
   234234234234278
   818181911112111"))
 
-# non-allocating but also slower
-function joltage_onepass(n, b::AbstractString, acc=0)
-  n == 1 && return acc
-  n -= 1
-  dig, i = findmax(c -> c - '0', @view(b[1:end-n]))
-  tail = @view(b[i+1:end])
-  return joltage_onepass(n, tail, 10 * acc + (dig))
+### 130 us
+@inline function joltage_unrolled(n::Int, line::AbstractString)
+  bytes = codeunits(line)
+  acc::Int = 0
+  start = 1
+  L = length(bytes)
+
+  @inbounds for remaining = n:-1:1
+    last = L - (remaining - 1)
+
+    maxdigit = 0x00
+    maxpos = start
+
+    for i = start:last
+      d = bytes[i] - UInt8('0')
+      if d > maxdigit
+        maxdigit = d
+        maxpos = i
+      end
+    end
+
+    acc = acc * 10 + maxdigit
+    start = maxpos + 1
+  end
+
+  return acc
 end
